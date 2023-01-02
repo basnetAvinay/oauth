@@ -1,0 +1,7 @@
+okta:
+  oauth2:
+    issuer: https://your-okta-domain/oauth2/default
+    client-id: CLIENT_ID
+    client-secret: CLIENT_SECRET
+server:
+  port: 8081

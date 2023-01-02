@@ -1,0 +1,17 @@
+spring:
+  security:
+      oauth2:
+        client:
+          registration:
+            okta:
+              client-id: CLIENT_ID
+              client-secret: CLIENT_SECRET
+              authorization-grant-type: client_credentials
+              scope: mod_custom
+          provider:
+              okta:
+                token-uri: https://your-okta-domain/oauth2/default/v1/token
+  main:
+    web-application-type: none
+server:
+  port: 8082
