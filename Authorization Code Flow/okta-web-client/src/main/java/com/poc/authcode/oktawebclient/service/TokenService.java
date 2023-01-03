@@ -62,8 +62,8 @@ public class TokenService {
                     claimsMono.subscribe(res -> {
                         logger.info("\n\nResponse from protected API of resource server");
                         logger.info(res + "\n\n");
-                    }).dispose();
-                }, err -> logger.error(err.getMessage())).dispose();
+                    });
+                }, err -> logger.error(err.getMessage()));
     }
 
     private Mono<String> getProtectedResource(String accessToken) {
