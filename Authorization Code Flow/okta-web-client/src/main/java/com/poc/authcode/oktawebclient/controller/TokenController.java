@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class TokenController {
@@ -13,7 +14,8 @@ public class TokenController {
     private TokenService tokenService;
 
     @GetMapping("/oauth2/token")
-    public void getToken(@RequestParam("code") String code, @RequestParam("state") String state) {
-        tokenService.exchangeCodeForToken(code, state);
+    public Mono<String> exchangeCodeForTokenAndGetClaims(@RequestParam("code") String code,
+                                                         @RequestParam("state") String state) {
+        return tokenService.exchangeCodeForTokenAndGetClaims(code, state);
     }
 }

@@ -19,6 +19,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
+import static org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames.*;
+
 @Service
 public class TokenService {
 
@@ -33,40 +35,42 @@ public class TokenService {
     @Value("${spring.security.oauth2.client.registration.okta.client-secret}")
     String clientSecret;
 
+    @Value("${spring.security.oauth2.client.registration.okta.authorization-grant-type}")
+    String authorizationGrantType;
+
     @Value("${spring.security.oauth2.client.registration.okta.redirect-uri}")
     String redirectUri;
 
-    public void exchangeCodeForToken(String code, String state) {
+    @Value("${spring.security.oauth2.client.provider.okta.token-uri}")
+    String tokenUri;
+
+
+    public Mono<String> exchangeCodeForTokenAndGetClaims(String code, String state) {
         logger.info("Authorization code: " + code);
 
         String credentials = clientId + ":" + clientSecret;
         String encodedCredentials = new String(Base64.getEncoder().encode(credentials.getBytes()));
 
-        String access_token_url = "https://dev-54958989.okta.com/oauth2/default/v1/token";
-        webClient.post()
-                .uri(access_token_url)
+        return webClient.post()
+                .uri(tokenUri)
                 .headers(h -> {
                     h.setAccept(List.of(MediaType.APPLICATION_JSON));
                     h.add(HttpHeaders.AUTHORIZATION, "Basic " + encodedCredentials);
                     h.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
                 })
                 .body(BodyInserters
-                        .fromFormData("grant_type", "authorization_code")
-                        .with("redirect_uri", redirectUri)
-                        .with("code", code))
+                        .fromFormData(GRANT_TYPE, authorizationGrantType)
+                        .with(REDIRECT_URI, redirectUri)
+                        .with(CODE, code))
                 .retrieve()
                 .bodyToMono(Token.class)
-                .subscribe(token -> {
-                    this.decodeAndLogTokenInfo(token);
-                    var claimsMono = this.getProtectedResource(token.getAccess_token());
-                    claimsMono.subscribe(res -> {
-                        logger.info("\n\nResponse from protected API of resource server");
-                        logger.info(res + "\n\n");
-                    });
-                }, err -> logger.error(err.getMessage()));
+                .flatMap(token -> {
+                    decodeAndLogTokenInfo(token);
+                    return getClaims(token.getAccess_token());
+                });
     }
 
-    private Mono<String> getProtectedResource(String accessToken) {
+    private Mono<String> getClaims(String accessToken) {
         return webClient.get()
                 .uri("http://localhost:9091/claims")
                 .headers(h -> {
